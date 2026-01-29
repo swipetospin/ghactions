@@ -12,6 +12,9 @@ on:
       pypi_bucket:
         type: string
         default: "spincar-pypi"
+      ghactions_ref:
+        type: string
+        default: "main"
       aws_region:
         type: string
         default: "us-east-1"
@@ -45,6 +48,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: swipetospin/ghactions
+          ref: ${{ inputs.ghactions_ref }}
           path: .ghactions
 
       - uses: actions/setup-python@v5
