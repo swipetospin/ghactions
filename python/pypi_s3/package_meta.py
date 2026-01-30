@@ -14,7 +14,7 @@ def read_version(pkg: str) -> str:
     if m:
         return m.group(1).strip()
 
-    # fallback: find semantic-ish version anywhere (matches your old deployer pattern)
+    # fallback: find semantic-ish version anywhere (matches old deployer pattern)
     m2 = re.search(r'([0-9]+\.[0-9]+\.[0-9]+[^\s\'"]*)', txt)
     if not m2:
         raise SystemExit(f"Could not find version in {init_py}")

@@ -36,7 +36,6 @@ def maybe_patch_version(init_path: Path, raw: str, norm: str) -> bool:
     return True
 
 def s3_prefix(package_name: str) -> str:
-    # bucket layout you confirmed: spincar-pypi/<pkg-with-dashes>/index.html
     return package_name.replace("_", "-")
 
 def list_objects(s3, bucket: str, prefix: str):
