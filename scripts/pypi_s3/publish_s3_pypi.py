@@ -1,32 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import html
-import re
 import subprocess
 from pathlib import Path
 
 import boto3
 from botocore.exceptions import ClientError
 from packaging.version import Version
-
-VERSION_RE = re.compile(r'__version__\s*=\s*[\'"]([^\'"]+)[\'"]')
-
-def read_init_version(init_path: Path) -> str:
-    txt = init_path.read_text(encoding="utf-8")
-    m = VERSION_RE.search(txt)
-    if m:
-        return m.group(1).strip()
-
-    m2 = re.search(r'([0-9]+\.[0-9]+\.[0-9]+[^\s\'"]*)', txt)
-    if not m2:
-        raise SystemExit(f"Could not find version in {init_path}")
-    return m2.group(1).strip()
-
-def normalize(v: str) -> str:
-    if "-" in v and "+" not in v:
-        base, suffix = v.split("-", 1)
-        return f"{base}+{suffix}"
-    return v
+from versioning import read_version, normalize
 
 def maybe_patch_version(init_path: Path, raw: str, norm: str) -> bool:
     if raw == norm:
@@ -35,14 +16,17 @@ def maybe_patch_version(init_path: Path, raw: str, norm: str) -> bool:
     init_path.write_text(txt.replace(raw, norm, 1), encoding="utf-8")
     return True
 
+
 def s3_prefix(package_name: str) -> str:
     return package_name.replace("_", "-")
+
 
 def list_objects(s3, bucket: str, prefix: str):
     paginator = s3.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=bucket, Prefix=f"{prefix}/"):
         for obj in page.get("Contents", []):
             yield obj["Key"]
+
 
 def object_exists(s3, bucket: str, key: str) -> bool:
     try:
@@ -53,21 +37,25 @@ def object_exists(s3, bucket: str, key: str) -> bool:
             return False
         raise
 
-def build_dist():
-    subprocess.check_call(["python", "-m", "build", "--sdist", "--wheel"])
+
+def build_dist(package_root: Path):
+    subprocess.check_call(["python", "-m", "build", "--sdist", "--wheel"], cwd=str(package_root))
+
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--package-name", required=True)
+    ap.add_argument("--package-root", default=".")
     ap.add_argument("--bucket", required=True)
     args = ap.parse_args()
 
     pkg = args.package_name
-    init_path = Path(pkg) / "__init__.py"
+    package_root = Path(args.package_root)
+    init_path = package_root / pkg / "__init__.py"
     if not init_path.exists():
         raise SystemExit(f"Expected {init_path} to exist")
 
-    raw_version = read_init_version(init_path)
+    raw_version = read_version(pkg, str(package_root))
     norm_version = normalize(raw_version)
 
     # Ensure normalized version is valid PEP440
@@ -76,12 +64,12 @@ def main():
     patched = maybe_patch_version(init_path, raw_version, norm_version)
 
     try:
-        build_dist()
+        build_dist(package_root)
 
         s3 = boto3.client("s3")
         prefix = s3_prefix(pkg)
 
-        dist_dir = Path("dist")
+        dist_dir = package_root / "dist"
         artifacts = sorted(dist_dir.glob("*"))
         if not artifacts:
             raise SystemExit("No artifacts in dist/")
@@ -123,6 +111,7 @@ def main():
             # restore runner file content (runner is ephemeral, but keep it clean)
             txt = init_path.read_text(encoding="utf-8")
             init_path.write_text(txt.replace(norm_version, raw_version, 1), encoding="utf-8")
+
 
 if __name__ == "__main__":
     main()

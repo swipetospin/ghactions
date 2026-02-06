@@ -14,6 +14,9 @@ on:
         default: "--sdist --wheel"
     secrets: {}
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
