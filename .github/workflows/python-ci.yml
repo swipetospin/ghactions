@@ -24,7 +24,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout package repo
+        uses: actions/checkout@v4
+
+      - name: Checkout ghactions
+        uses: actions/checkout@v4
+        with:
+          repository: swipetospin/ghactions
+          ref: ${{ github.workflow_sha }}
+          path: .ghactions
 
       - uses: actions/setup-python@v5
         with:
@@ -45,10 +53,7 @@ jobs:
           python -c "import importlib; m=importlib.import_module('${{ inputs.import_module }}'); print(getattr(m, '__version__', 'no __version__'))"
 
       - name: Run automated tests (if present)
+        env:
+          TEST_ARGS: ${{ inputs.test_args }}
         run: |
-          if [ -d tests ] || [ -d test ]; then
-            python -m pip install pytest
-            python -m pytest ${{ inputs.test_args }}
-          else
-            echo "No tests directory found; skipping automated tests."
-          fi
+          bash .ghactions/scripts/python_ci/run_tests.sh
