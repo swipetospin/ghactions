@@ -1,0 +1,62 @@
+name: Python CI (build + smoke import + tests)
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        type: string
+        default: "3.10"
+      ghactions_ref:
+        type: string
+        default: "main"
+      import_module:
+        type: string
+        required: true
+      build_args:
+        type: string
+        default: "--sdist --wheel"
+      test_args:
+        type: string
+        default: "-q"
+    secrets: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout package repo
+        uses: actions/checkout@v4
+
+      - name: Checkout ghactions
+        uses: actions/checkout@v4
+        with:
+          repository: swipetospin/ghactions
+          ref: ${{ inputs.ghactions_ref }}
+          path: .ghactions
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+
+      - name: Build artifacts
+        run: |
+          python -m build ${{ inputs.build_args }}
+
+      - name: Smoke install (no deps) + import
+        run: |
+          python -m pip install --no-deps dist/*.whl
+          python -c "import importlib; m=importlib.import_module('${{ inputs.import_module }}'); print(getattr(m, '__version__', 'no __version__'))"
+
+      - name: Run automated tests (if present)
+        env:
+          TEST_ARGS: ${{ inputs.test_args }}
+        run: |
+          bash .ghactions/scripts/python_ci/run_tests.sh
