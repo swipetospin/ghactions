@@ -2,6 +2,7 @@
 set -euo pipefail
 
 EXTRA_INDEX_URL="${PIP_EXTRA_INDEX_URL:-https://pypi.spincar.com}"
+PYTEST_REQUIREMENT="${PYTEST_REQUIREMENT:-pytest>=8,<9}"
 
 if [[ ! -d tests && ! -d test ]]; then
   echo "No tests directory found; skipping automated tests."
@@ -26,7 +27,9 @@ if [[ -n "${pkg_root}" ]]; then
     || install_with_internal_index_fallback "${pkg_root}"
 fi
 
-python -m pip install pytest
+# Some repos pin very old pytest in dev extras (e.g. pytest==4.6),
+# which breaks on modern Python runtimes used in CI.
+python -m pip install --upgrade "${PYTEST_REQUIREMENT}"
 
 if [[ -n "${TEST_ARGS:-}" ]]; then
   # Intentionally split TEST_ARGS into argv for pytest (e.g. "-q -k smoke")
