@@ -6,6 +6,9 @@ on:
       python_version:
         type: string
         default: "3.10"
+      ghactions_ref:
+        type: string
+        default: "main"
       import_module:
         type: string
         required: true
@@ -31,7 +34,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: swipetospin/ghactions
-          ref: ${{ github.workflow_sha }}
+          ref: ${{ inputs.ghactions_ref }}
           path: .ghactions
 
       - uses: actions/setup-python@v5
