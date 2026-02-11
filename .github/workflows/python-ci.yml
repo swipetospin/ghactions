@@ -12,9 +12,6 @@ on:
       build_args:
         type: string
         default: "--sdist --wheel"
-      run_tests:
-        type: boolean
-        default: true
       test_args:
         type: string
         default: "-q"
@@ -47,15 +44,10 @@ jobs:
           python -m pip install --no-deps dist/*.whl
           python -c "import importlib; m=importlib.import_module('${{ inputs.import_module }}'); print(getattr(m, '__version__', 'no __version__'))"
 
-      - name: Install test tooling
-        if: ${{ inputs.run_tests }}
-        run: |
-          python -m pip install pytest
-
-      - name: Run automated tests
-        if: ${{ inputs.run_tests }}
+      - name: Run automated tests (if present)
         run: |
           if [ -d tests ] || [ -d test ]; then
+            python -m pip install pytest
             python -m pytest ${{ inputs.test_args }}
           else
             echo "No tests directory found; skipping automated tests."
