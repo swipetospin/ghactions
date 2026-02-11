@@ -9,6 +9,44 @@ if [[ ! -d tests && ! -d test ]]; then
   exit 0
 fi
 
+ensure_local_aws_profile() {
+  local profile="$1"
+  local aws_dir="${HOME}/.aws"
+  local credentials_file="${aws_dir}/credentials"
+  local config_file="${aws_dir}/config"
+
+  mkdir -p "${aws_dir}"
+  touch "${credentials_file}" "${config_file}"
+
+  if ! grep -q "^\\[${profile}\\]$" "${credentials_file}"; then
+    cat >>"${credentials_file}" <<EOF
+[${profile}]
+aws_access_key_id = test
+aws_secret_access_key = test
+aws_session_token = test
+EOF
+  fi
+
+  local config_section="[profile ${profile}]"
+  if [[ "${profile}" == "default" ]]; then
+    config_section="[default]"
+  fi
+
+  if ! grep -q "^${config_section}$" "${config_file}"; then
+    cat >>"${config_file}" <<EOF
+${config_section}
+region = us-east-1
+output = json
+EOF
+  fi
+}
+
+# Some test suites load AWS profiles during conftest import.
+ensure_local_aws_profile "default"
+ensure_local_aws_profile "test"
+ensure_local_aws_profile "prod"
+export AWS_EC2_METADATA_DISABLED="true"
+
 pkg_root=""
 if [[ -f setup.py || -f pyproject.toml ]]; then
   pkg_root="."
