@@ -1,3 +1,10 @@
+name: Claude Code Review
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
@@ -7,7 +14,27 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+        
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: "Review this PR for coding standards, best practices, bugs, and security issues. Post inline comments for anything that needs attention."
+          github_token: ${{ secrets.GITHUB_TOKEN }} 
+          claude_args: "--model claude-opus-4-6 --dangerously-skip-permissions"
+          show_full_output: true
+          prompt: |                                                                                                                         
+            Review only the files changed in this PR (use `git diff origin/${{ github.base_ref }}...HEAD --name-only` to identify them). 
+            Skip any files under `.github/workflows/`.                                                                                                                                                                                                             
+
+            For each changed file, review for:
+              - Bugs and logic errors
+              - Security issues
+              - Angular/TypeScript best practices
+              - Code quality and maintainability
+
+            Post inline comments on specific lines where issues are found. If a file looks good, do not comment on it.
+
+            Do not review any files matching `.github/**`
