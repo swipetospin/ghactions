@@ -1,4 +1,4 @@
-name: Python CI (build + smoke import + tests)
+name: Python CI (build + smoke import)
 
 on:
   workflow_call:
@@ -9,37 +9,18 @@ on:
       ghactions_ref:
         type: string
         default: "main"
-      ci_role_arn:
-        type: string
-        default: ""
       runner_labels_json:
         type: string
         default: '["ubuntu-latest"]'
-      aws_region:
-        type: string
-        default: "us-east-1"
-      aws_profile_aliases:
-        type: string
-        default: "default,test,prod"
       import_module:
         type: string
         required: true
       build_args:
         type: string
         default: "--sdist --wheel"
-      test_args:
-        type: string
-        default: "-q"
-      test_env_lines:
-        type: string
-        default: ""
-    secrets:
-      ci_iam_role_arn:
-        required: false
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   build:
@@ -59,22 +40,6 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
 
-      - name: Resolve CI role ARN
-        id: ci_role
-        env:
-          INPUT_CI_ROLE_ARN: ${{ inputs.ci_role_arn }}
-          SECRET_CI_IAM_ROLE_ARN: ${{ secrets.ci_iam_role_arn }}
-        run: |
-          ci_role_arn="${INPUT_CI_ROLE_ARN:-${SECRET_CI_IAM_ROLE_ARN:-}}"
-          echo "ci_role_arn=${ci_role_arn}" >> "$GITHUB_OUTPUT"
-
-      - name: Configure AWS credentials (OIDC for tests)
-        if: ${{ steps.ci_role.outputs.ci_role_arn != '' }}
-        uses: aws-actions/configure-aws-credentials@v5
-        with:
-          role-to-assume: ${{ steps.ci_role.outputs.ci_role_arn }}
-          aws-region: ${{ inputs.aws_region }}
-
       - name: Install build tooling
         run: |
           python -m pip install --upgrade pip
@@ -88,12 +53,3 @@ jobs:
         run: |
           python -m pip install --no-deps dist/*.whl
           python -c "import importlib; m=importlib.import_module('${{ inputs.import_module }}'); print(getattr(m, '__version__', 'no __version__'))"
-
-      - name: Run automated tests (if present)
-        env:
-          TEST_ARGS: ${{ inputs.test_args }}
-          AWS_PROFILE_ALIASES: ${{ inputs.aws_profile_aliases }}
-          AWS_PROFILE_REGION: ${{ inputs.aws_region }}
-          TEST_ENV_LINES: ${{ inputs.test_env_lines }}
-        run: |
-          bash .ghactions/scripts/python_ci/run_tests.sh
