@@ -15,10 +15,13 @@ on:
       ghactions_ref:
         type: string
         default: "main"
+      publish_role_arn:
+        type: string
+        default: ""
 
     secrets:
       pypi_publish_role_arn:
-        required: true
+        required: false
 
 permissions:
   id-token: write
@@ -50,9 +53,9 @@ jobs:
           python-version: ${{ inputs.python_version }}
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ secrets.pypi_publish_role_arn }}
+          role-to-assume: ${{ inputs.publish_role_arn || secrets.pypi_publish_role_arn }}
           aws-region: us-east-1
 
       - name: Install tooling

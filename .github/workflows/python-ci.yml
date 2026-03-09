@@ -9,6 +9,18 @@ on:
       ghactions_ref:
         type: string
         default: "main"
+      ci_role_arn:
+        type: string
+        default: ""
+      runner_labels_json:
+        type: string
+        default: '["ubuntu-latest"]'
+      aws_region:
+        type: string
+        default: "us-east-1"
+      aws_profile_aliases:
+        type: string
+        default: "default,test,prod"
       import_module:
         type: string
         required: true
@@ -18,14 +30,20 @@ on:
       test_args:
         type: string
         default: "-q"
-    secrets: {}
+      test_env_lines:
+        type: string
+        default: ""
+    secrets:
+      ci_iam_role_arn:
+        required: false
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJson(inputs.runner_labels_json) }}
     steps:
       - name: Checkout package repo
         uses: actions/checkout@v4
@@ -40,6 +58,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python_version }}
+
+      - name: Configure AWS credentials (OIDC for tests)
+        if: ${{ inputs.ci_role_arn != '' || secrets.ci_iam_role_arn != '' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ inputs.ci_role_arn || secrets.ci_iam_role_arn }}
+          aws-region: ${{ inputs.aws_region }}
 
       - name: Install build tooling
         run: |
@@ -58,5 +83,8 @@ jobs:
       - name: Run automated tests (if present)
         env:
           TEST_ARGS: ${{ inputs.test_args }}
+          AWS_PROFILE_ALIASES: ${{ inputs.aws_profile_aliases }}
+          AWS_PROFILE_REGION: ${{ inputs.aws_region }}
+          TEST_ENV_LINES: ${{ inputs.test_env_lines }}
         run: |
           bash .ghactions/scripts/python_ci/run_tests.sh
