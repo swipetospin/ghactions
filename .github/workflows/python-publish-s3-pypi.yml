@@ -52,10 +52,20 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
 
+      - name: Resolve publish role ARN
+        id: publish_role
+        env:
+          INPUT_PUBLISH_ROLE_ARN: ${{ inputs.publish_role_arn }}
+          SECRET_PYPI_PUBLISH_ROLE_ARN: ${{ secrets.pypi_publish_role_arn }}
+        run: |
+          publish_role_arn="${INPUT_PUBLISH_ROLE_ARN:-${SECRET_PYPI_PUBLISH_ROLE_ARN:-}}"
+          echo "publish_role_arn=${publish_role_arn}" >> "$GITHUB_OUTPUT"
+
       - name: Configure AWS credentials (OIDC)
+        if: ${{ steps.publish_role.outputs.publish_role_arn != '' }}
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ inputs.publish_role_arn || secrets.pypi_publish_role_arn }}
+          role-to-assume: ${{ steps.publish_role.outputs.publish_role_arn }}
           aws-region: us-east-1
 
       - name: Install tooling

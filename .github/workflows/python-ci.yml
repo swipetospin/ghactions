@@ -59,11 +59,20 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
 
+      - name: Resolve CI role ARN
+        id: ci_role
+        env:
+          INPUT_CI_ROLE_ARN: ${{ inputs.ci_role_arn }}
+          SECRET_CI_IAM_ROLE_ARN: ${{ secrets.ci_iam_role_arn }}
+        run: |
+          ci_role_arn="${INPUT_CI_ROLE_ARN:-${SECRET_CI_IAM_ROLE_ARN:-}}"
+          echo "ci_role_arn=${ci_role_arn}" >> "$GITHUB_OUTPUT"
+
       - name: Configure AWS credentials (OIDC for tests)
-        if: ${{ inputs.ci_role_arn != '' || secrets.ci_iam_role_arn != '' }}
+        if: ${{ steps.ci_role.outputs.ci_role_arn != '' }}
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ inputs.ci_role_arn || secrets.ci_iam_role_arn }}
+          role-to-assume: ${{ steps.ci_role.outputs.ci_role_arn }}
           aws-region: ${{ inputs.aws_region }}
 
       - name: Install build tooling
