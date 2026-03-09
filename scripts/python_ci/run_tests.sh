@@ -132,8 +132,16 @@ fi
 python -m pip install --upgrade "${PYTEST_REQUIREMENT}"
 
 if [[ -n "${TEST_ARGS:-}" ]]; then
-  # Intentionally split TEST_ARGS into argv for pytest (e.g. "-q -k smoke")
-  read -r -a pytest_args <<<"${TEST_ARGS}"
+  # Parse TEST_ARGS like a shell command line so callers can quote pytest expressions.
+  mapfile -t pytest_args < <(
+    python - "${TEST_ARGS}" <<'PY'
+import shlex
+import sys
+
+for arg in shlex.split(sys.argv[1]):
+    print(arg)
+PY
+  )
 else
   pytest_args=(-q)
 fi
