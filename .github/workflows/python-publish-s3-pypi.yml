@@ -61,8 +61,13 @@ jobs:
           publish_role_arn="${INPUT_PUBLISH_ROLE_ARN:-${SECRET_PYPI_PUBLISH_ROLE_ARN:-}}"
           echo "publish_role_arn=${publish_role_arn}" >> "$GITHUB_OUTPUT"
 
+      - name: Require publish role ARN
+        if: ${{ steps.publish_role.outputs.publish_role_arn == '' }}
+        run: |
+          echo "publish_role_arn input or pypi_publish_role_arn secret is required" >&2
+          exit 1
+
       - name: Configure AWS credentials (OIDC)
-        if: ${{ steps.publish_role.outputs.publish_role_arn != '' }}
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ steps.publish_role.outputs.publish_role_arn }}

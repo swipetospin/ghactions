@@ -9,9 +9,6 @@ on:
       ghactions_ref:
         type: string
         default: "main"
-      runner_labels_json:
-        type: string
-        default: '["ubuntu-latest"]'
       import_module:
         type: string
         required: true
@@ -24,7 +21,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ${{ fromJson(inputs.runner_labels_json) }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout package repo
         uses: actions/checkout@v4
