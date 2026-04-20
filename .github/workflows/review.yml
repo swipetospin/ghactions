@@ -29,16 +29,17 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }} 
           claude_args: "--model claude-opus-4-6 --dangerously-skip-permissions"
           show_full_output: true
-          prompt: |                                                                                                                         
-            Review only the files changed in this PR (use `git diff origin/${{ github.base_ref }}...HEAD --name-only` to identify them). 
-            Skip any files under `.github/workflows/`.                                                                                                                                                                                                             
+          prompt: |
+            Rules:
+              - Review only the files changed in this PR (use `git diff origin/${{ github.base_ref }}...HEAD --name-only` to identify them).
+              - Do not review any files matching `.github/**`.
+              - Before reviewing, run the following command and read the output to understand what has already been flagged or discussed:
+                `gh pr view ${{ github.event.pull_request.number }} --json comments,reviews,reviewThreads`
+              - Do not re-raise issues that you (Claude) have previously commented on.
+              - Post inline comments on specific lines where issues are found. If a file looks good, do not comment on it.
 
             For each changed file, review for:
               - Bugs and logic errors
               - Security issues
-              - Angular/TypeScript best practices
+              - Language best practices
               - Code quality and maintainability
-
-            Post inline comments on specific lines where issues are found. If a file looks good, do not comment on it.
-
-            Do not review any files matching `.github/**`
