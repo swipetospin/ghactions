@@ -1,5 +1,7 @@
-cfn-lint
-flake8
-flake8-docstrings
-flake8-json
-requests
+# Pinned so linter behavior only changes when we deliberately bump it.
+# cfn-lint 1.x requires Python >= 3.9; keep the Dockerfile base image in sync.
+cfn-lint==1.53.2
+flake8==7.3.0
+flake8-docstrings==1.7.0
+flake8-json==24.4.0
+requests==2.34.2

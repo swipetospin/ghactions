@@ -23,6 +23,15 @@ with:
   linter: cfn-lint
 ```
 
+### Linter versions
+
+The linters run inside the image built from `linters/Dockerfile`, and their versions are pinned in
+`linters/requirements.txt`. Bumping a linter is a deliberate change: it can surface new findings on
+every repo that uses this action, so pin the new version rather than letting it float.
+
+Note that `cfn-lint` 1.x requires Python 3.9 or newer, so the base image and the pinned `cfn-lint`
+version need to stay compatible.
+
 ### Usage
 
 In your project, create the file `.github/workflows/main.yml`. Here's an example,
