@@ -1,4 +1,4 @@
-FROM python:3.6-slim
+FROM python:3.12-slim
 
 LABEL "com.github.actions.name"="SpinCar PR Linter"
 LABEL "com.github.actions.description"="GitHub Action to lint and annotate pull requests"
@@ -7,10 +7,9 @@ LABEL "com.github.actions.color"="green"
 
 RUN apt-get update -y; exit 0
 RUN apt-get install -y git jq curl
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_22.x | bash -
 RUN apt-get install -y nodejs
 
-RUN npm install -g npm@9.1.1
 RUN npm root -g
 RUN npm install -g jshint jshint-json
 
