@@ -30,16 +30,24 @@ jobs:
           claude_args: "--model claude-opus-4-8 --dangerously-skip-permissions"
           show_full_output: true
           prompt: |
-            Rules:
+            Review rules:
               - Review only the files changed in this PR (use `git diff origin/${{ github.base_ref }}...HEAD --name-only` to identify them).
               - Do not review any files matching `.github/**`.
               - Before reviewing, run the following command and read the output to understand what has already been flagged or discussed:
                 `gh pr view ${{ github.event.pull_request.number }} --json comments,reviews,reviewThreads`
               - Do not re-raise issues that you (Claude) have previously commented on.
-              - Post inline comments on specific lines where issues are found. If a file looks good, do not comment on it.
+              - Post inline comments on specific lines where issues are found.
+              - If a file looks good, do not comment on it.
 
-            For each changed file, review for:
-              - Bugs and logic errors
-              - Security issues
-              - Language best practices
-              - Code quality and maintainability
+            When writing PR comments, always follow these style rules:
+              - Adhere to the "ASD-STE100 Simplified Technical English" guidelines.
+              - Sentences must contain 25 words or less.
+              - Prefer short words over long words.
+
+            For each file, ask yourself the following questions:
+              - Does the code introduce bugs?
+              - Are there logic errors?
+              - Does the code introduce any security gaps? (e.g.: untrusted input must be sanitized, sensitive information must not leak)
+              - Does the code follow the language best practices? (e.g.: Python code must adhere to PEP8 and be "pythonic")
+              - Is the code easy to read and maintainable? (e.g.: "magic" variables must be commented, avoid repeated functions/variables)
+              - Is the new code's style consistent with the rest of the file?
